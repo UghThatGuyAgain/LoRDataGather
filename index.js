@@ -102,7 +102,7 @@ function parseAndZip() {
         "activeDeck": deck,
         "cardPositions": cardPositionsOverTime
     };
-    fs.writeFile("./${currentGameID}.json", JSON.parse(bigBoiData), () => safeCacheAndShutdown())
+    fs.writeFile(`./${currentGameID}.json`, JSON.parse(bigBoiData), () => safeCacheAndShutdown())
 }
 
 function safeCacheAndShutdown() {
