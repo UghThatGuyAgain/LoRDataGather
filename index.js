@@ -1,7 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 
-let logger = fs.createWriteStream("./log.txt", { flags: "a"});
+let logger = fs.createWriteStream("./log.txt", { flags: "a" });
 
 let port = 21337;
 process.argv.forEach(function (val, index, array) {
