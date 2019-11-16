@@ -3,7 +3,13 @@ const fs = require("fs");
 
 let logger = fs.createWriteStream("./log.txt", { flags: "a" });
 
-let {gameIDCache, portCache} = fs.readFileSync("./cache.json") ? fs.existsSync("./cache.json") : null;
+let portCache;
+let gameIDCache;
+if(fs.existsSync("./cache.json")) {
+    const cache = fs.readFileSync("./cache.json");
+    portCache = cache.port;
+    gameIDCache = cache.gameID;
+}
 
 let port = portCache || 21337;
 
@@ -25,7 +31,7 @@ let currentGameID = gameIDCache || 0;
 // getGameResult loop again. If 1, keep looping for card position check.
 let gameStatus;
 
-// General information about the player to determine offsets and whatnot.
+// General information about the player to determine screen offsets and whatnot.
 let playerName;
 let opponentName;
 let screenDimensions;
@@ -118,7 +124,7 @@ function requestEndpoint(endpoint) {
     });
 }
 
-function parseAndZip() {
+function parseAndZip(state) {
     let bigBoiData = {
         "playerName": playerName,
         "opponentName": opponentName,
@@ -127,7 +133,7 @@ function parseAndZip() {
         "cardPositions": cardPositionsOverTime
     };
     logger.write(`Data parsed to ${currentGameID}.json`);
-    fs.writeFile(`./${currentGameID}.json`, JSON.stringify(bigBoiData), () => safeCacheAndShutdown())
+    fs.writeFile(`./${state}${currentGameID}.json`, JSON.stringify(bigBoiData), () => safeCacheAndShutdown())
 }
 
 function safeCacheAndShutdown() {
@@ -140,6 +146,6 @@ function safeCacheAndShutdown() {
 }
 
 process.on("SIGINT", () => {
-    parseAndZip();
+    parseAndZip("IncompleteByShutdown");
     safeCacheAndShutdown();
 });
