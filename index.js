@@ -138,3 +138,8 @@ function safeCacheAndShutdown() {
     logger.write("Shutting down...");
     fs.writeFileSync("./cache.json", JSON.stringify(cache));
 }
+
+process.on("SIGINT", () => {
+    parseAndZip();
+    safeCacheAndShutdown();
+});
