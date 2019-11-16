@@ -3,7 +3,10 @@ const fs = require("fs");
 
 let logger = fs.createWriteStream("./log.txt", { flags: "a" });
 
-let port = 21337;
+let {gameIDCache, portCache} = fs.readFileSync("./cache.json") ? fs.existsSync("./cache.json") : null;
+
+let port = portCache || 21337;
+
 process.argv.forEach(function (val, index, array) {
     if(index === 2) {
         port = parseInt(val);
@@ -15,7 +18,7 @@ process.argv.forEach(function (val, index, array) {
 
 // An increment of the gameID while the script is active. Starts at 0 and increments
 // for each game found, in order to keep track of the games
-let currentGameID = 0;
+let currentGameID = gameIDCache || 0;
 
 // 0 - Inactive :: 1 - Acknowledged :: 2 - Player Info Recorded, Rectangle Data Recording
 // Check for status at the end of each card position check. If 0, end loops and start
