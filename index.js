@@ -5,7 +5,8 @@ let logger = fs.createWriteStream("./log.txt", { flags: "a" });
 
 let portCache;
 let gameIDCache;
-if(fs.existsSync("./cache.json")) {
+
+if (fs.existsSync("./cache.json")) {
     const cache = fs.readFileSync("./cache.json");
     portCache = cache.port;
     gameIDCache = cache.gameID;
@@ -14,9 +15,9 @@ if(fs.existsSync("./cache.json")) {
 let port = portCache || 21337;
 
 process.argv.forEach(function (val, index, array) {
-    if(index === 2) {
+    if (index === 2) {
         port = parseInt(val);
-    } else if(index < 2) {
+    } else if (index < 2) {
         console.log("no port provided");
         logger.write("no port provided");
     }
@@ -41,6 +42,7 @@ let cardPositionsOverTime = [];
 
 function main() {
     deck = getActiveDeck();
+    
     // Check for active game
     getGameResult();
 
@@ -49,11 +51,11 @@ function main() {
     getCardPositions();
 
     // Request every 5 seconds
-    while(gameStatus === 2) {
+    while (gameStatus === 2) {
         setTimeout(getCardPositions, 5000);
     }
-
 }
+
 logger.write("Script started");
 main();
 
@@ -62,19 +64,22 @@ let url = `http://localhost:${port}/`;
 // Essentially, check for active game. If there is none, wait 10 seconds and try again.
 // If there is one, set currentGameID to data.GameID and go on.
 function getGameResult() {
-    if(gameStatus === 1) {
+    if (gameStatus === 1) {
         logger.write("Game lost, resetting game state");
         gameStatus = 0;
-    } else if(gameStatus === 2) {
+    } else if (gameStatus === 2) {
         logger.write("Game ended, parsing data to JSON and starting search again");
         gameStatus = 0;
         parseAndZip();
         return main();
     }
+    
     let data = requestEndpoint("game-result");
-    if(data.LocalPlayerWon === null) {
+    
+    if (data.LocalPlayerWon === null) {
         setTimeout(getGameResult, 10000);
     }
+    
     currentGameID += 1;
     logger.write(`Game found! Game ID: ${currentGameID}`);
     gameStatus = 1;
@@ -85,20 +90,25 @@ function getGameResult() {
 // set the player info variables, and begin looping.
 function getCardPositions() {
     let data = requestEndpoint("positional-rectangles");
-    if(data.PlayerName === null) {
+	
+    if (data.PlayerName === null) {
         gameStatus = 0;
         return main();
     }
-    if(gameStatus === 1) {
+
+    if (gameStatus === 1) {
         logger.write("Game acknowledged, player information recorded, starting rectangle gathering");
+      
         playerName = data.PlayerName;
         opponentName = data.OpponentName;
         screenDimensions = data.Screen;
         gameStatus = 2;
     }
-    if(cardPositionsOverTime[-1] === data.Rectangles) {
+
+    if (cardPositionsOverTime[-1] === data.Rectangles) {
         return getCardPositions();
     }
+  
     cardPositionsOverTime.push(data.Rectangles);
 }
 
@@ -109,14 +119,16 @@ function getActiveDeck() {
 
 function requestEndpoint(endpoint) {
     url += endpoint;
+	
     http.get(url, (res) => {
         let {statusCode} = res;
 
-        if(statusCode !== 200) {
+        if (statusCode !== 200) {
             return 0;
         }
 
         let data = [];
+		
         res.on("data", (chunk) => data.push(chunk));
         res.on("end", () => data.join(""));
 
@@ -132,15 +144,17 @@ function parseAndZip(state) {
         "activeDeck": deck,
         "cardPositions": cardPositionsOverTime
     };
+
     logger.write(`Data parsed to ${currentGameID}.json`);
     fs.writeFile(`./${state}${currentGameID}.json`, JSON.stringify(bigBoiData), () => safeCacheAndShutdown())
 }
 
-function safeCacheAndShutdown() {
+function saveCacheAndShutdown() {
     let cache = {
         "gameID": currentGameID,
         "port": port
     };
+	
     logger.write("Shutting down...");
     fs.writeFileSync("./cache.json", JSON.stringify(cache));
 }
